@@ -37,7 +37,7 @@
                                         Clicked="UploadButton_Clicked"
                                         Margin="5,0"
                                         Padding="10,5"/>
-                                <Button x:Name="SaveButton"
+                                <!--<Button x:Name="SaveButton"
                                         Text="Save"
                                         Clicked="SaveButton_Clicked"
                                         Margin="5,0"
@@ -46,7 +46,7 @@
                                         Text="Save As"
                                         Clicked="SaveAsButton_Clicked"
                                         Margin="5,0"
-                                        Padding="10,5"/>
+                                        Padding="10,5"/>-->
                                 <Button x:Name="ExportButton"
                                         Text="Export"
                                         Clicked="ExportButton_Clicked"
@@ -112,13 +112,15 @@
                                                 Clicked="InsertImagesButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                         <Button x:Name="RotateButton"
                                                 Text="Rotate Page"
                                                 Clicked="RotateButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                         <Button x:Name="DeletePageButton"
                                                 Text="Delete Page"
                                                 Clicked="DeletePageButton_Clicked"
@@ -136,31 +138,35 @@
                                                 Clicked="SplitButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                         <Button x:Name="FillFormButton"
                                                 Text="Fill Form"
                                                 Clicked="FillFormButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                         <Button x:Name="GenerateInvoiceButton"
                                                 Text="Generate Invoice"
                                                 Clicked="GenerateInvoiceButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                         <Button x:Name="PlaceSignatureButton"
                                                 Text="Place Signature"
                                                 Clicked="PlaceSignatureButton_Clicked"
                                                 BackgroundColor="#2196F3"
                                                 TextColor="White"
-                                                Padding="10,8"/>
+                                                Padding="10,8"
+                                                IsVisible="False"/>
                                 </VerticalStackLayout>
                         </ScrollView>
                 </Border>
 
                 <!-- Activity Log Panel -->
-                <Grid Grid.Row="3"
+                <!--<Grid Grid.Row="3"
                       HeightRequest="120">
                         <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -196,7 +202,7 @@
                                         </DataTemplate>
                                 </ListView.ItemTemplate>
                         </ListView>
-                </Grid>
+                </Grid>-->
 
                 <!-- Status Bar / Notifications -->
                 <Grid Grid.Row="4"

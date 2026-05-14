@@ -35,7 +35,7 @@ public partial class PdfViewerPage : ContentPage
     public PdfViewerPage()
     {
         InitializeComponent();
-        ActivityLogListView.ItemsSource = ActivityLog;
+        //ActivityLogListView.ItemsSource = ActivityLog;
         LoadPdfDocument();
     }
 
@@ -285,8 +285,8 @@ public partial class PdfViewerPage : ContentPage
         FillFormButton.IsEnabled = enabled;
         GenerateInvoiceButton.IsEnabled = enabled;
         PlaceSignatureButton.IsEnabled = enabled;
-        SaveButton.IsEnabled = enabled;
-        SaveAsButton.IsEnabled = enabled;
+        //SaveButton.IsEnabled = enabled;
+        //SaveAsButton.IsEnabled = enabled;
         ExportButton.IsEnabled = enabled;
     }
 
@@ -314,10 +314,10 @@ public partial class PdfViewerPage : ContentPage
         ActivityLog.Add(entry);
 
         // Scroll to bottom
-        if (ActivityLogListView.ItemsSource != null)
-        {
-            ActivityLogListView.ScrollTo(entry, ScrollToPosition.End, false);
-        }
+        //if (ActivityLogListView.ItemsSource != null)
+        //{
+        //    ActivityLogListView.ScrollTo(entry, ScrollToPosition.End, false);
+        //}
     }
 
     private void ShowNotification(string message, NotificationType type = NotificationType.Info)
