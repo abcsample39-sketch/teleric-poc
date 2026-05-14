@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:telerik="http://schemas.telerik.com/2022/xaml/maui"
+             x:Class="TelericPdfPOC.Views.PdfViewerPage"
+             Title="PDF Viewer">
+
+        <Grid>
+                <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="180"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Toolbar with zoom, navigation, and upload -->
+                <ScrollView Grid.Row="0"
+                            Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Default">
+                        <StackLayout Orientation="Horizontal">
+                                <telerik:RadPdfViewerToolbar x:Name="Toolbar"
+                                                             PdfViewer="{x:Reference PdfViewer}">
+                                        <telerik:PdfViewerZoomInToolbarItem/>
+                                        <telerik:PdfViewerZoomOutToolbarItem/>
+                                        <telerik:PdfViewerNavigateToPreviousPageToolbarItem/>
+                                        <telerik:PdfViewerNavigateToNextPageToolbarItem/>
+                                        <telerik:PdfViewerToggleLayoutModeToolbarItem/>
+                                </telerik:RadPdfViewerToolbar>
+                                <Button x:Name="UploadButton"
+                                        Text="Upload PDF"
+                                        Clicked="UploadButton_Clicked"
+                                        Margin="5,0"
+                                        Padding="10,5"/>
+                                <Button x:Name="SaveButton"
+                                        Text="Save"
+                                        Clicked="SaveButton_Clicked"
+                                        Margin="5,0"
+                                        Padding="10,5"/>
+                                <Button x:Name="SaveAsButton"
+                                        Text="Save As"
+                                        Clicked="SaveAsButton_Clicked"
+                                        Margin="5,0"
+                                        Padding="10,5"/>
+                                <Button x:Name="ExportButton"
+                                        Text="Export"
+                                        Clicked="ExportButton_Clicked"
+                                        Margin="5,0"
+                                        Padding="10,5"/>
+                        </StackLayout>
+                </ScrollView>
+
+                <!-- Loading Indicator -->
+                <Grid Grid.Row="1"
+                      Grid.ColumnSpan="2"
+                      BackgroundColor="#80000000"
+                      x:Name="LoadingOverlay"
+                      IsVisible="False">
+                        <StackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center">
+                                <ActivityIndicator x:Name="LoadingIndicator"
+                                                   IsRunning="True"
+                                                   Color="White"
+                                                   WidthRequest="50"
+                                                   HeightRequest="50"/>
+                                <Label x:Name="LoadingLabel"
+                                       Text="Processing..."
+                                       TextColor="White"
+                                       FontSize="14"
+                                       HorizontalOptions="Center"
+                                       Margin="0,10,0,0"/>
+                        </StackLayout>
+                </Grid>
+
+                <!-- PDF Viewer Control -->
+                <telerik:RadPdfViewer x:Name="PdfViewer"
+                                      Grid.Row="2"
+                                      Grid.Column="0"/>
+
+                <!-- Right-side Action Buttons Panel -->
+                <Border Grid.Row="2"
+                        Grid.Column="1"
+                        BackgroundColor="#F5F5F5"
+                        Stroke="#CCCCCC"
+                        StrokeThickness="1"
+                        Padding="8">
+                        <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="4"/>
+                        </Border.StrokeShape>
+                        <ScrollView Orientation="Vertical"
+                                    VerticalScrollBarVisibility="Default">
+                                <VerticalStackLayout Spacing="6">
+                                        <Button x:Name="WatermarkButton"
+                                                Text="Add Watermark"
+                                                Clicked="WatermarkButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="FooterButton"
+                                                Text="Add Footer"
+                                                Clicked="FooterButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="InsertImagesButton"
+                                                Text="Insert Images"
+                                                Clicked="InsertImagesButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="RotateButton"
+                                                Text="Rotate Page"
+                                                Clicked="RotateButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="DeletePageButton"
+                                                Text="Delete Page"
+                                                Clicked="DeletePageButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="MergeButton"
+                                                Text="Merge PDFs"
+                                                Clicked="MergeButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="SplitButton"
+                                                Text="Split PDF"
+                                                Clicked="SplitButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="FillFormButton"
+                                                Text="Fill Form"
+                                                Clicked="FillFormButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="GenerateInvoiceButton"
+                                                Text="Generate Invoice"
+                                                Clicked="GenerateInvoiceButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                        <Button x:Name="PlaceSignatureButton"
+                                                Text="Place Signature"
+                                                Clicked="PlaceSignatureButton_Clicked"
+                                                BackgroundColor="#2196F3"
+                                                TextColor="White"
+                                                Padding="10,8"/>
+                                </VerticalStackLayout>
+                        </ScrollView>
+                </Border>
+
+                <!-- Activity Log Panel -->
+                <Grid Grid.Row="3"
+                      HeightRequest="120">
+                        <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackLayout Orientation="Horizontal"
+                                     BackgroundColor="#E0E0E0"
+                                     Padding="5">
+                                <Label Text="Activity Log"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center"/>
+                                <Button x:Name="ClearLogButton"
+                                        Text="Clear"
+                                        Clicked="ClearLogButton_Clicked"
+                                        Padding="5,2"
+                                        Margin="10,0,0,0"
+                                        FontSize="10"/>
+                        </StackLayout>
+                        <ListView x:Name="ActivityLogListView"
+                                  Grid.Row="1"
+                                  BackgroundColor="#F5F5F5">
+                                <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                                <ViewCell>
+                                                        <StackLayout Padding="5,2">
+                                                                <Label Text="{Binding Timestamp}"
+                                                                       FontSize="10"
+                                                                       TextColor="Gray"/>
+                                                                <Label Text="{Binding Message}"
+                                                                       FontSize="12"/>
+                                                        </StackLayout>
+                                                </ViewCell>
+                                        </DataTemplate>
+                                </ListView.ItemTemplate>
+                        </ListView>
+                </Grid>
+
+                <!-- Status Bar / Notifications -->
+                <Grid Grid.Row="4"
+                      x:Name="StatusBar"
+                      BackgroundColor="#2196F3"
+                      Padding="10,5">
+                        <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label x:Name="StatusLabel"
+                               Text="Ready"
+                               TextColor="White"
+                               VerticalOptions="Center"/>
+                        <Label x:Name="NotificationLabel"
+                               Grid.Column="1"
+                               Text=""
+                               TextColor="White"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center"
+                               IsVisible="False"/>
+                </Grid>
+        </Grid>
+
+</ContentPage>
