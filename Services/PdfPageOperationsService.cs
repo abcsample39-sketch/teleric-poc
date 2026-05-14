@@ -154,8 +154,13 @@ public class PdfPageOperationsService
             inputStream.Position = 0;
             var document = _provider.Import(inputStream, TimeSpan.FromSeconds(15));
 
-            foreach (var page in document.Pages)
+            // Transfer page ownership from source document to merged document.
+            // Adding a page that already belongs to another document throws:
+            // "The document element is associated with another parent."
+            while (document.Pages.Count > 0)
             {
+                var page = document.Pages[0];
+                document.Pages.RemoveAt(0);
                 mergedDocument.Pages.Add(page);
             }
         }

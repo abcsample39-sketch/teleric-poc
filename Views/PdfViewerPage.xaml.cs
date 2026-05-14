@@ -27,6 +27,7 @@ public partial class PdfViewerPage : ContentPage
     // Toggle state tracking
     private bool _hasWatermark = false;
     private bool _hasFooter = false;
+    private byte[]? _currentPdfBytes;
 
     // Activity log collection
     public ObservableCollection<ActivityLogEntry> ActivityLog { get; } = new();
@@ -44,25 +45,62 @@ public partial class PdfViewerPage : ContentPage
         Func<CancellationToken, Task<Stream>> streamFunc = ct => Task.Run(() =>
         {
             Assembly assembly = typeof(PdfViewerPage).Assembly;
-            string fileName = assembly.GetManifestResourceNames()
+            string? fileName = assembly.GetManifestResourceNames()
                 .FirstOrDefault(n => n.Contains("sample.pdf"));
 
             if (fileName == null)
             {
-                return null;
+                return Stream.Null;
             }
 
-            Stream stream = assembly.GetManifestResourceStream(fileName);
-            _currentPdfStream = stream;
+            Stream? stream = assembly.GetManifestResourceStream(fileName);
+            if (stream == null)
+            {
+                return Stream.Null;
+            }
+
+            var loadedCopy = new MemoryStream();
+            stream.CopyTo(loadedCopy);
+            var loadedBytes = loadedCopy.ToArray();
+
+            _currentPdfStream = new MemoryStream(loadedBytes, writable: false);
+            _currentPdfStream.Position = 0;
+            _currentPdfBytes = loadedBytes;
             _basePdfStream = null;
             _hasWatermark = false;
             _hasFooter = false;
-            UpdateToggleButtonStates();
-            return stream;
+
+            MainThread.BeginInvokeOnMainThread(UpdateToggleButtonStates);
+            LogActivity($"Initial sample PDF loaded ({loadedBytes.Length} bytes)", "Info");
+
+            return new MemoryStream(loadedBytes, writable: false);
         });
 
         PdfViewer.Source = streamFunc;
         LogActivity("Application started", "Info");
+    }
+
+    private void RefreshViewerSourceFromCurrentStream()
+    {
+        if (_currentPdfStream == null) return;
+
+        _currentPdfStream.Position = 0;
+        using var copy = new MemoryStream();
+        _currentPdfStream.CopyTo(copy);
+        _currentPdfBytes = copy.ToArray();
+        _currentPdfStream.Position = 0;
+
+        Func<CancellationToken, Task<Stream>> sourceFunc =
+            ct => Task.FromResult<Stream>(new MemoryStream(_currentPdfBytes, writable: false));
+
+        if (MainThread.IsMainThread)
+        {
+            PdfViewer.Source = sourceFunc;
+        }
+        else
+        {
+            MainThread.BeginInvokeOnMainThread(() => PdfViewer.Source = sourceFunc);
+        }
     }
 
     #region View-State Preservation
@@ -156,8 +194,7 @@ public partial class PdfViewerPage : ContentPage
         _currentPdfStream = resultStream;
 
         // Update source in viewer
-        Func<CancellationToken, Task<Stream>> streamFunc = ct => Task.Run(() => _currentPdfStream!);
-        PdfViewer.Source = streamFunc;
+        RefreshViewerSourceFromCurrentStream();
 
         // Restore view state after source is applied
         ApplyViewState();
@@ -170,11 +207,43 @@ public partial class PdfViewerPage : ContentPage
     {
         if (_currentPdfStream == null) return;
 
-        _basePdfStream?.Dispose();
-        _currentPdfStream.Position = 0;
-        _basePdfStream = new MemoryStream();
-        _currentPdfStream.CopyTo(_basePdfStream);
-        _basePdfStream.Position = 0;
+        try
+        {
+            _basePdfStream?.Dispose();
+
+            // Check if stream is seekable
+            if (_currentPdfStream.CanSeek)
+            {
+                _currentPdfStream.Position = 0;
+            }
+
+            _basePdfStream = new MemoryStream();
+
+            // Use CopyToAsync with proper buffering
+            if (_currentPdfStream.CanSeek)
+            {
+                _currentPdfStream.CopyTo(_basePdfStream);
+            }
+            else
+            {
+                // For non-seekable streams, read in chunks
+                var buffer = new byte[81920];
+                int bytesRead;
+                while ((bytesRead = _currentPdfStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    _basePdfStream.Write(buffer, 0, bytesRead);
+                }
+            }
+
+            _basePdfStream.Position = 0;
+
+            LogActivity("Base snapshot created", "Info");
+        }
+        catch (Exception ex)
+        {
+            LogActivity($"Failed to create base snapshot: {ex.Message}", "Error");
+            System.Diagnostics.Debug.WriteLine($"CreateBaseSnapshot error: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -223,6 +292,12 @@ public partial class PdfViewerPage : ContentPage
 
     private void LogActivity(string message, string type = "Info")
     {
+        if (!MainThread.IsMainThread)
+        {
+            MainThread.BeginInvokeOnMainThread(() => LogActivity(message, type));
+            return;
+        }
+
         var entry = new ActivityLogEntry
         {
             Timestamp = DateTime.Now.ToString("HH:mm:ss"),
@@ -304,11 +379,13 @@ public partial class PdfViewerPage : ContentPage
                     fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     var fileStream = await pickResult.OpenReadAsync();
-                    _currentPdfStream = fileStream;
+                    var uploadedCopy = new MemoryStream();
+                    await fileStream.CopyToAsync(uploadedCopy);
+                    uploadedCopy.Position = 0;
+                    _currentPdfStream = uploadedCopy;
                     _currentFilePath = pickResult.FullPath;
                     _exportService.SetCurrentFilePath(_currentFilePath);
-                    Func<CancellationToken, Task<Stream>> selectedStreamFunc = ct => Task.Run(() => _currentPdfStream!);
-                    PdfViewer.Source = selectedStreamFunc;
+                    RefreshViewerSourceFromCurrentStream();
 
                     LogActivity($"Loaded: {fileName}", "Success");
                     ShowNotification($"Loaded: {fileName}", NotificationType.Success);
@@ -549,26 +626,56 @@ public partial class PdfViewerPage : ContentPage
                 return;
             }
 
-            bool confirm = await DisplayAlert("Confirm Delete", $"Delete page {_currentPageIndex + 1}?", "Yes", "No");
+            string? pageInput = await DisplayPromptAsync(
+                "Delete Page",
+                $"Enter page number to delete (1-{pageCount}):",
+                "Delete",
+                "Cancel",
+                initialValue: (_currentPageIndex + 1).ToString(),
+                keyboard: Keyboard.Numeric);
+
+            if (string.IsNullOrWhiteSpace(pageInput))
+            {
+                LogActivity("Delete page cancelled", "Info");
+                return;
+            }
+
+            if (!int.TryParse(pageInput.Trim(), out int pageNumberToDelete) ||
+                pageNumberToDelete < 1 ||
+                pageNumberToDelete > pageCount)
+            {
+                LogActivity($"Invalid page number for delete: '{pageInput}'", "Warning");
+                await DisplayAlert("Invalid Page", $"Please enter a number between 1 and {pageCount}.", "OK");
+                return;
+            }
+
+            int pageIndexToDelete = pageNumberToDelete - 1;
+
+            bool confirm = await DisplayAlert("Confirm Delete", $"Delete page {pageNumberToDelete}?", "Yes", "No");
             if (!confirm)
             {
+                LogActivity("Delete page cancelled at confirmation", "Info");
                 return;
             }
 
             ShowLoading("Deleting page...");
-            LogActivity($"Deleting page {_currentPageIndex + 1}", "Info");
+            LogActivity($"Deleting page {pageNumberToDelete}", "Info");
 
             await ApplyPdfMutation(stream =>
             {
-                return _pageOperationsService.DeletePage(stream, _currentPageIndex);
+                return _pageOperationsService.DeletePage(stream, pageIndexToDelete);
             });
 
             // Update page index if needed
             _currentPdfStream!.Position = 0;
             int newPageCount = _pageOperationsService.GetPageCount(_currentPdfStream);
-            if (_currentPageIndex >= newPageCount)
+            if (pageIndexToDelete >= newPageCount)
             {
                 _currentPageIndex = newPageCount - 1;
+            }
+            else
+            {
+                _currentPageIndex = pageIndexToDelete;
             }
 
             LogActivity($"Page deleted. Document has {newPageCount} pages", "Success");
@@ -730,8 +837,7 @@ public partial class PdfViewerPage : ContentPage
                 _currentPdfStream = resultStream;
                 _currentPageIndex = 0;
 
-                Func<CancellationToken, Task<Stream>> splitStreamFunc = ct => Task.Run(() => _currentPdfStream!);
-                PdfViewer.Source = splitStreamFunc;
+                RefreshViewerSourceFromCurrentStream();
                 ApplyViewState();
             }
         }
@@ -818,8 +924,7 @@ public partial class PdfViewerPage : ContentPage
             _currentPdfStream?.Dispose();
             _currentPdfStream = pdfStream;
 
-            Func<CancellationToken, Task<Stream>> invoiceStreamFunc = ct => Task.Run(() => _currentPdfStream!);
-            PdfViewer.Source = invoiceStreamFunc;
+            RefreshViewerSourceFromCurrentStream();
             ApplyViewState();
 
             LogActivity($"Invoice {invoice.InvoiceNumber} generated", "Success");
